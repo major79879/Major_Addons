@@ -30,6 +30,13 @@ if [ ! -s "$TMP_FILE" ] || [ "$(wc -c < "$TMP_FILE" | tr -d '[:space:]')" -lt 50
     exit 1
 fi
 
+# A valid MVI (MPEG-2) file starts with the sequence header 00 00 01 b3.
+MAGIC="$(od -An -tx1 -N4 "$TMP_FILE" 2>/dev/null | tr -d ' \n')"
+if [ -n "$MAGIC" ] && [ "$MAGIC" != "000001b3" ]; then
+    echo "The downloaded file is not a valid MVI bootlogo." >&2
+    exit 1
+fi
+
 if [ -f "$DEST" ]; then
     BACKUP="${DEST}.backup.$(date +%Y%m%d%H%M%S)"
     cp -p "$DEST" "$BACKUP"
@@ -38,5 +45,6 @@ fi
 
 chmod 0644 "$TMP_FILE"
 mv -f "$TMP_FILE" "$DEST"
+sync
 trap - 0 HUP INT TERM
 echo "Installed ${ID} bootlogo at ${DEST}"
